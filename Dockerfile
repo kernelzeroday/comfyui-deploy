@@ -6,11 +6,21 @@ RUN apt-get update && apt-get install -y \
     openssl \
     git
 
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-RUN apt-get install -y nodejs
-# Install bun
-RUN npm install -g bun
+# Install nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+
+# Set up nvm environment variables
+ENV NVM_DIR /root/.nvm
+ENV NODE_VERSION 20.11.1
+
+# Install specific Node version and set it as default
+RUN /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm alias default $NODE_VERSION"
+
+# Update PATH
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+# Install yarn
+RUN npm install --global yarn
 
 # Set work directory
 WORKDIR /app
@@ -19,13 +29,12 @@ WORKDIR /app
 COPY . .
 
 # Install project dependencies
-RUN cd web && bun install
+RUN yarn install
 
 # Copy environment file
-RUN cp .env.example .env.local
-
+RUN find / -name ".env.example" -exec cp {} .env \;
 # Replace JWT_SECRET
 RUN echo JWT_SECRET=$(openssl rand -hex 32) >> .env.local
 
 # Run migrations and start server
-CMD bun run db-dev & bun run migrate-local && bun dev
+CMD yarn dev
