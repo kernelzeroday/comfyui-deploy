@@ -1,0 +1,20 @@
+version: '3'
+services:
+  app:
+  
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    command: bash -c "bun run db-dev & bun run migrate-local && bun dev"
+    environment:
+      - NODE_ENV=development
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=verceldb
+    ports:
+      - "5480:5432"
